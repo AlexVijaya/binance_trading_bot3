@@ -1,0 +1,31 @@
+ 
+levels_with_touches_before_is_in
+                 index            open_time   open  high    low  close    volume                  close_time          qav  num_trades  taker_base_vol  taker_quote_vol  ignore Trading_pair  number_of_same_highs  NaN_highs
+7 2021-10-07 03:00:00  2021-10-07 00:00:00  6.440   6.7  6.282  6.445  149202.3  2021-10-07 23:59:59.999000  972250.2273      3922.0         88363.4      576987.5706     0.0     FIDAUSDT                     2        NaN
+9 2021-10-09 03:00:00  2021-10-09 00:00:00  6.568   6.7  6.447  6.504  140749.9  2021-10-09 23:59:59.999000  925680.3114      3561.0         81051.6      534097.9895     0.0     FIDAUSDT                     2        NaN
+levels_with_touches_after_is_in
+ Empty DataFrame
+Columns: [index, open_time, open, high, low, close, volume, close_time, qav, num_trades, taker_base_vol, taker_quote_vol, ignore, Trading_pair, number_of_same_highs, NaN_highs]
+Index: []
+
+dictitonary_of_high_levels_with_counter
+ {}
+levels_with_touches_end_of_program
+ Empty DataFrame
+Columns: [index, open_time, open, high, low, close, volume, close_time, qav, num_trades, taker_base_vol, taker_quote_vol, ignore, Trading_pair, number_of_same_highs, NaN_highs]
+Index: []
+levels_with_touches_before_is_in
+ Empty DataFrame
+Columns: [index, open_time, open, high, low, close, volume, close_time, qav, num_trades, taker_base_vol, taker_quote_vol, ignore, Trading_pair, number_of_same_highs, NaN_highs]
+Index: []
+levels_with_touches_after_is_in
+ Empty DataFrame
+Columns: [index, open_time, open, high, low, close, volume, close_time, qav, num_trades, taker_base_vol, taker_quote_vol, ignore, Trading_pair, number_of_same_highs, NaN_highs]
+Index: []
+
+dictitonary_of_high_levels_with_counter
+ {}
+levels_with_touches_end_of_program
+ Empty DataFrame
+Columns: [index, open_time, open, high, low, close, volume, close_time, qav, num_trades, taker_base_vol, taker_quote_vol, ignore, Trading_pair, number_of_same_highs, NaN_highs]
+Index: []
