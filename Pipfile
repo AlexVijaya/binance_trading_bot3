@@ -4,6 +4,29 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+python-binance = "*"
+ta-lib = "*"
+numpy = "*"
+websocket-client = "*"
+matplotlib = "*"
+alpaca-trade-api = "*"
+fix-yahoo-finance = "*"
+pandas = "*"
+lxml = "*"
+xmltodict = "*"
+html5lib = "*"
+bs4 = "*"
+selenium = "*"
+ipython = "*"
+yfinance = "==0.1.63"
+pandas-datareader = "*"
+plotly = "*"
+tacharts = "*"
+apimoex = "*"
+kaleido = "*"
+aiohttp = "*"
+aiofiles = "*"
+dash = "*"
 
 [dev-packages]
 
