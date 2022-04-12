@@ -5,6 +5,7 @@ import pandas as pd
 import datetime as dt
 import matplotlib.pyplot as plt
 import os
+import datetime
 import pprint
 import time
 from pathlib import Path
@@ -82,4 +83,7 @@ def insert_binance_trading_pair_ohlc_and_sar_into_db():
     end_time=time.time()
     overall_time=end_time-start_time
     print('overall time in minutes=', overall_time/60.0)
+    finish_time=datetime.datetime.utcfromtimestamp ( time.time() ).strftime ( '%Y-%m-%dT%H:%M:%SZ' )
+    print('finished at', finish_time)
+
 insert_binance_trading_pair_ohlc_and_sar_into_db()
