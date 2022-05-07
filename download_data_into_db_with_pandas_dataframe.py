@@ -6,11 +6,12 @@ import os
 import pandas as pd
 def download_yf_data_into_sql_df():
     start_time=time.time()
-    conn=sqlite3.connect( "yf_db_historical_data_new.db" )
+    path_to_db=os.path.join(os.curdir, 'datasets','sql_databases', "yf_db_historical_data_new.db")
+    conn=sqlite3.connect( path_to_db )
 
     cur=conn.cursor()
 
-    conn1 = sqlite3.connect ( os.path.join ( os.curdir , "yf_db_historical_data3.db" ) )
+    conn1 = sqlite3.connect ( os.path.join ( os.curdir , 'datasets','sql_databases','yf_db_historical_data3.db' ) )
     cur1 = conn1.cursor ()
     dist_tickers_df = pd.read_sql ( '''select dist_tickers from dist_tickers;''' , conn1 )
     dist_tickers_series = dist_tickers_df['dist_tickers']

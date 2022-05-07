@@ -100,9 +100,9 @@ def calculate_horizontal_levels_using_only_highs_binance(symbol,
                     if (index_of_not_null_levels-1)<0:
                         prev_high=count_high_values_merged_full_df.at[
                         levels_with_touches_all_dates.index[index_of_not_null_levels], "high"]
-                        print(f"(index_of_not_null_levels-1)<0 for {symbol}")
-                        print (index_of_not_null_levels-1)
-                        print("number_of_same_highs", number_of_same_highs)
+                        # print(f"(index_of_not_null_levels-1)<0 for {symbol}")
+                        # print (index_of_not_null_levels-1)
+                        # print("number_of_same_highs", number_of_same_highs)
                         #time.sleep(15)
                     else:
                         prev_high=count_high_values_merged_full_df.at[

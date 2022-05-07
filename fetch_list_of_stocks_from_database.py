@@ -1,6 +1,7 @@
 import sqlite3
-import pprint
-def fetch_list_of_stocks_from_database(database_name='tickers_companies_prices.db'):
+import os
+path_to_db=os.path.join(os.getcwd(), 'datasets', 'sql_databases', 'tickers_companies_prices.db')
+def fetch_list_of_stocks_from_database(database_name=path_to_db):
     connection=sqlite3.connect(database_name)
     connection.row_factory=sqlite3.Row
     cur=connection.cursor()

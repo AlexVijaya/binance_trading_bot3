@@ -35,7 +35,58 @@ def get_trading_pairs_from_binance():
     for s in exchange_info['symbols']:
         pprint.pprint(s['symbol'])
         binance_symbols.append(s['symbol'])
+    print ('binance symbols\n', binance_symbols)
+    print ( 'length binance symbols\n' , len ( binance_symbols ) )
+    #drop symbol if symbol contains UP, DOWN , BULL, BEAR words
+    for symbol in binance_symbols:
+        #print ('each symbol\n', each_symbol)
+        try:
+            if "UPUSD" in symbol:
+                print (f'\n found symbol {symbol} '
+                       f'with UP word\n')
+                binance_symbols.remove(symbol)
+        except Exception as e:
+            print (e)
+    for symbol in binance_symbols:
+        try:
+            if "DOWNUSD" in symbol:
+                print (f'\n found symbol {symbol} '
+                       f'with DOWN word\n')
+                binance_symbols.remove(symbol)
+        except Exception as e:
+            print (e)
+
+    for symbol in binance_symbols:
+        # print ('each symbol\n', each_symbol)
+        try:
+            if "BULLUSD" in symbol:
+                print ( f'\n found symbol {symbol} '
+                        f'with BULL word\n' )
+                binance_symbols.remove ( symbol )
+        except Exception as e:
+            print ( e )
+    for symbol in binance_symbols:
+        try:
+            if "BEARUSD" in symbol:
+                print ( f'\n found symbol {symbol} '
+                        f'with BEAR word\n' )
+                binance_symbols.remove ( symbol )
+        except Exception as e:
+            print ( e )
+
+
+
+        # if "DOWNUSD" in symbol:
+        #     print ( f'\n found symbol {symbol} '
+        #             f'with  DOWN word\n' )
+        #     try:
+        #         binance_symbols.remove ( symbol )
+        #     except Exception as e:
+        #         print ( e )
+            #continue
         #time.sleep(3)
+    print ( 'binance symbols\n' , binance_symbols )
+    print ( 'length binance symbols\n' , len(binance_symbols) )
 
     #insert the list of trading pairs into a database
 

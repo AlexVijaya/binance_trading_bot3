@@ -1,6 +1,8 @@
 from binance_config import api_secret
 from binance_config import api_key
 from binance.client import Client
+import urllib3
+import requests
 import pandas as pd
 import datetime as dt
 import matplotlib.pyplot as plt
@@ -18,7 +20,7 @@ def insert_binance_trading_pair_ohlc_into_db(interval = '1d',connection_to_price
                                             "sql_databases","binance_historical_data.db"),
                                             start_moment="1 Jan,2017"):
     start_time=time.time()
-    client = Client ( api_key = api_key , api_secret = api_secret )
+    client = Client (  api_key , api_secret, {"timeout": 20} )
 
     # path_to_databases = os.path.join ( os.getcwd () , "datasets" , "sql_databases" )
     # Path ( path_to_databases ).mkdir ( parents = True , exist_ok = True )
@@ -95,8 +97,24 @@ def insert_binance_trading_pair_ohlc_into_db(interval = '1d',connection_to_price
                 print ( 'Pausing for 30 seconds...' )
                 time.sleep ( 30 )
         except Exception as e:
-            print (f"\nproblem with {symbol}",e)
-            continue
+            if e==requests.exceptions.ReadTimeout:
+                print ( f"\nRead_Time_out_error problem with {symbol}" , e )
+                pass
+            elif e==requests.exceptions.ConnectionError:
+                print ( f"\nConnectionError problem with {symbol}" , e )
+                pass
+            elif e==urllib3.exceptions.MaxRetryError:
+                print ( f"\nMaxRetryError problem with {symbol}" , e )
+                pass
+
+            # if e==requests.exceptions.RequestException:
+            #     print ( f"\nRequestException problem with {symbol}" , e )
+            #     pass
+
+            else:
+
+                print (f"\nAnother problem with {symbol}",e)
+                continue
     connection_to_prices.close ()
     end_time=time.time()
     overall_time=end_time-start_time
@@ -104,17 +122,19 @@ def insert_binance_trading_pair_ohlc_into_db(interval = '1d',connection_to_price
 
 #comment out the following  lines if you want to download only daily historical klines
 
-interval='1m'
-start_moment='1 day ago, UTC'
-path_to_databases=os.path.join(os.getcwd(),"datasets","sql_databases")
-Path(path_to_databases).mkdir(parents=True, exist_ok=True)
-connection_to_prices=sqlite3.connect(os.path.join(os.getcwd(),
-                                                          "datasets",
-                                                          "sql_databases",
-                                                          "binance_1_minute_historical_data.db"))
-path_to_database_table_in_which_to_be_dropped=os.path.join(os.getcwd(),"datasets",
-                                            "sql_databases","binance_1_minute_historical_data.db")
-insert_binance_trading_pair_ohlc_into_db(interval,
-                                         connection_to_prices,
-                                         path_to_database_table_in_which_to_be_dropped,
-                                         start_moment)
+# interval='1m'
+# start_moment='1 day ago, UTC'
+# path_to_databases=os.path.join(os.getcwd(),"datasets","sql_databases")
+# Path(path_to_databases).mkdir(parents=True, exist_ok=True)
+# connection_to_prices=sqlite3.connect(os.path.join(os.getcwd(),
+#                                                           "datasets",
+#                                                           "sql_databases",
+#                                                           "binance_1_minute_historical_data.db"))
+# path_to_database_table_in_which_to_be_dropped=os.path.join(os.getcwd(),"datasets",
+#                                             "sql_databases","binance_1_minute_historical_data.db")
+# insert_binance_trading_pair_ohlc_into_db(interval,
+#                                          connection_to_prices,
+#                                          path_to_database_table_in_which_to_be_dropped,
+#                                          start_moment)
+
+insert_binance_trading_pair_ohlc_into_db()

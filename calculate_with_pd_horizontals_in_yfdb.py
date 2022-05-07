@@ -5,7 +5,7 @@ import sqlite3
 import pandas as pd
 def calculate_horizontal_levels_using_only_lows():
     start_time=time.time()
-    conn=sqlite3.connect( os.path.join( os.getcwd() , 'yf_db_historical_data_new.db' ) )
+    conn=sqlite3.connect( os.path.join( os.getcwd() , 'datasets','sql_databases','yf_db_historical_data_new.db' ) )
     cur=conn.cursor()
     conn.row_factory=sqlite3.Row
     #cur.execute('''select * from stock_prices where stock_id=10 order by id''')

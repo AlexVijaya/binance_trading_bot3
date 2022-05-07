@@ -9,7 +9,7 @@ import pandas as pd
 
 def calculate_horizontal_levels_using_only_highs(symbol,round_to_this_number_of_decimal_places,number_of_same_highs):
     start_time=time.time()
-    conn=sqlite3.connect( os.path.join( os.getcwd() , 'yf_db_historical_data_new.db' ) )
+    conn=sqlite3.connect( os.path.join( os.getcwd() , 'datasets','sql_databases','yf_db_historical_data_new.db' ) )
     cur=conn.cursor()
     conn.row_factory=sqlite3.Row
     print (f'symbol is {symbol}')

@@ -15,7 +15,7 @@ def plot_assets_with_mplfinance_with_yahoofinance():
     path=os.path.join(os.getcwd(), "datasets", "daily")
     Path(path).mkdir(parents=True,exist_ok = True)
 
-    conn=sqlite3.connect( os.path.join( os.getcwd() , 'yf_db_historical_data_new.db' ) )
+    conn=sqlite3.connect( os.path.join( os.getcwd() , 'datasets','sql_databases','yf_db_historical_data_new.db' ) )
     cur = conn.cursor ()
     conn.row_factory = sqlite3.Row
 

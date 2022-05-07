@@ -8,7 +8,8 @@ import binance_config
 
 socket_var="wss://stream.binance.com:9443/ws/ethusdt@kline_1m"
 def binance_trading_bot(socket_var):
-    client=Client(api_key = binance_config.api_key, api_secret = binance_config.api_secret)
+    client=Client(api_key = binance_config.api_key,
+                  api_secret = binance_config.api_secret)
     in_position=False
     closes=[]
 
@@ -25,7 +26,10 @@ def binance_trading_bot(socket_var):
     def order(side,quantity, symbol, order_type=ORDER_TYPE_MARKET):
         try:
             print('sending order...')
-            order=client.create_order(side=side,quantity=quantity,symbol=symbol,order_type=order_type)
+            order=client.create_order(side=side,
+                                      quantity=quantity,
+                                      symbol=symbol,
+                                      order_type=order_type)
             print(order)
 
         except Exception as e:
@@ -76,7 +80,10 @@ def binance_trading_bot(socket_var):
         print("connection established")
     def on_close(wsss):
         print("connection closed")
-    wx=websocket.WebSocketApp(socket_var,on_open=on_open,on_close=on_close,on_message=on_message)
+    wx=websocket.WebSocketApp(socket_var,
+                              on_open=on_open,
+                              on_close=on_close,
+                              on_message=on_message)
     wx.run_forever()
 
 if __name__ == '__main__':

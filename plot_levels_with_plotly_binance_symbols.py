@@ -76,7 +76,7 @@ def plot_levels_with_plotly(symbol,where_to_plot,path_to_databases,
 
 
     try:
-        fig.add_trace ( go.Candlestick (
+        fig.add_trace ( go.Candlestick (name=f'{symbol}',
             x = count_high_values_merged_full_df.index ,
             open = count_high_values_merged_full_df['open'] ,
             high = count_high_values_merged_full_df['high'] ,
@@ -94,7 +94,7 @@ def plot_levels_with_plotly(symbol,where_to_plot,path_to_databases,
                                                                   number_2level_touches_with_low ,
                                                                   level_for_this_period )
 
-        fig.add_trace ( go.Candlestick (
+        fig.add_trace ( go.Ohlc (name='BTCUSDT',
             x = count_low_values_merged_full_df.index ,
             open = count_low_values_merged_full_df_for_BTCUSDT['open'] ,
             high = count_low_values_merged_full_df_for_BTCUSDT['high'] ,
@@ -226,7 +226,8 @@ def plot_levels_with_plotly(symbol,where_to_plot,path_to_databases,
 
         #path_to_databases = os.path.join(os.getcwd() ,'datasets','plots', 'binance_plots_hh')
         Path ( path_to_databases ).mkdir ( parents = True , exist_ok = True )
-        fig.write_image( file=where_to_plot,format = 'png')
+        #fig.write_image( file=where_to_plot,format = 'html')
+        fig.write_html(where_to_plot)
     else:
         fig.show ( config = config )
 

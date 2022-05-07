@@ -7,11 +7,11 @@ import pandas as pd
 import quandl_config
 def download_quandl_data_into_sql_df():
     start_time=time.time()
-    conn=sqlite3.connect("quandl_tickers_companies_prices.db")
+    conn=sqlite3.connect(os.path.join ( os.curdir , 'datasets','sql_databases',"quandl_tickers_companies_prices.db"))
 
     cur=conn.cursor()
 
-    conn1 = sqlite3.connect ( os.path.join ( os.curdir , "yf_db_historical_data3.db" ) )
+    conn1 = sqlite3.connect ( os.path.join ( os.curdir , 'datasets','sql_databases','yf_db_historical_data3.db' ) )
     cur1 = conn1.cursor ()
     gerchik_tickers_df = pd.read_sql ( '''select gerchik_tickers from gerchik_symbols;''' , conn1 )
     gerchik_tickers_series = gerchik_tickers_df['gerchik_tickers']
@@ -70,7 +70,9 @@ def download_quandl_data_into_sql_df():
 
                 number_of_stocks=number_of_stocks+1
                 print(f"{number_of_stocks} out of {len(symbols_list)} have been added to db")
+                print("----------------------------------------------------")
             except Exception as e:
+                print("+++++++++++++++++++++++++++++++++++++++++++++=")
                 print(e)
 
             finally:

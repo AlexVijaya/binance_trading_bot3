@@ -33,6 +33,14 @@ def find_asset_close_to_hh_and_ll():
 
     potential_lower_low_assets=[]
     potential_higher_high_assets=[]
+    datetime_format = '%d-%m-%Y'
+    datetime_now = datetime.now ()
+    binance_foundation_day = datetime.strptime ( "11-07-2017" , datetime_format )
+
+    binance_was_founded_these_number_of_days_ago = datetime_now - binance_foundation_day
+    potential_higher_high_assets_df=pd.DataFrame(index=[days_ago for days_ago in range(binance_was_founded_these_number_of_days_ago.days,0,-50)])
+    potential_lower_low_assets_df=pd.DataFrame(index=[days_ago for days_ago in range(binance_was_founded_these_number_of_days_ago.days,0,-50)])
+    print([days_ago for days_ago in range(binance_was_founded_these_number_of_days_ago.days,0,-50)])
     for trading_pair in tickers_df['trading_pair']:
         #print ( trading_pair )
         sql_query_ohlc = pd.read_sql_query ( f'''select * from crypto_assets_ohlc 
@@ -45,16 +53,11 @@ def find_asset_close_to_hh_and_ll():
         historical_data_for_trading_pair_df['index'] = pd.to_datetime ( historical_data_for_trading_pair_df['index'] ,
                                                                         format = "%Y-%m-%d %H:%M:%S" )
         #print ( historical_data_for_trading_pair_df )
-        datetime_format='%d-%m-%Y'
-        datetime_now=datetime.now()
-        binance_foundation_day=datetime.strptime("11-07-2017",datetime_format)
 
-        binance_was_founded_these_number_of_days_ago=datetime_now-binance_foundation_day
         print ( binance_was_founded_these_number_of_days_ago )
         # historical_data_for_trading_pair_df.set_index('index', inplace = True)
         # print ( historical_data_for_trading_pair_df )
-        periods_for_ll_and_hh=[binance_was_founded_these_number_of_days_ago.days,
-                               365,330,300, 270, 240, 210, 180,150,120,90,60,30]
+        periods_for_ll_and_hh=[days_ago for days_ago in range(binance_was_founded_these_number_of_days_ago.days,0,-50)]
         try:
             for period in periods_for_ll_and_hh:
                 all_time_high=historical_data_for_trading_pair_df.iloc[-period:,
@@ -84,6 +87,9 @@ def find_asset_close_to_hh_and_ll():
                     print ( f"in {trading_pair} the condition for being close "
                             f"to {period} day time low" )
                     potential_lower_low_assets.append(trading_pair)
+                    potential_lower_low_assets_df.at[period,f"{trading_pair}"]=True
+                    # print('\npotential_lower_low_assets_df.at[period,f"{trading_pair}"]=\n',
+                    #       potential_lower_low_assets_df.to_string())
                     # print(f'last high of {trading_pair} is ', last_high)
                     # print ( f'last low of {trading_pair} is ' , last_low )
                     # print ( f'{trading_pair} all time low is ' , all_time_low )
@@ -94,6 +100,9 @@ def find_asset_close_to_hh_and_ll():
                     print ( f"in {trading_pair} the condition for being close to"
                             f" {period} day time high")
                     potential_higher_high_assets.append ( trading_pair )
+                    potential_higher_high_assets_df.at[period , f"{trading_pair}"] = True
+                    # print ( '\npotential_lower_low_assets_df.at[period,f"{trading_pair}"]=\n' ,
+                    #         potential_higher_high_assets_df.to_string() )
                     # print(f'last high of {trading_pair} is ', last_high)
                     # print ( f'last low of {trading_pair} is ' , last_low )
                     # print ( f'{trading_pair} all_time_high ' , all_time_high )
@@ -109,6 +118,9 @@ def find_asset_close_to_hh_and_ll():
             continue
         potential_higher_high_assets = list ( dict.fromkeys ( potential_higher_high_assets ) )
         potential_lower_low_assets = list ( dict.fromkeys ( potential_lower_low_assets ) )
+
+
+
         # print ( "potential_higher_highs_assets=" , potential_higher_high_assets ,
         #         "\n[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[\n",
         #         "potential_lower_low_assets=" , potential_lower_low_assets )
@@ -116,6 +128,12 @@ def find_asset_close_to_hh_and_ll():
         #         "\n====================================\n"
         #         "\n------------------------------------\n" )
     connection_to_binance_prices_db.close ()
+    # print ( '\npotential_higher_high_assets_df\n' ,
+    #         potential_higher_high_assets_df.to_string () )
+    #
+    # print ( '\npotential_lower_low_assets_df]=\n' ,
+    #         potential_lower_low_assets_df.to_string () )
+
     return potential_higher_high_assets,potential_lower_low_assets
 
 find_asset_close_to_hh_and_ll()
