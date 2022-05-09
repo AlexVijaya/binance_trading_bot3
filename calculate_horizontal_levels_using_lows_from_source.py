@@ -1,11 +1,8 @@
 import os
 import time
-
 import numpy as np
-
 import sqlite3
 import pandas as pd
-
 
 def calculate_horizontal_levels_using_only_lows_binance(symbol,
                                                 round_to_this_number_of_decimal_places,
@@ -89,7 +86,9 @@ def calculate_horizontal_levels_using_only_lows_binance(symbol,
     # print ( "levels_with_touches_all_dates\n" ,
     #         levels_with_touches_all_dates.head ( 10000 ).to_string () )
     conn.close ()
-    return count_low_values_merged_full_df , levels_with_touches , levels_with_touches_all_dates
+    return count_low_values_merged_full_df ,\
+           levels_with_touches ,\
+           levels_with_touches_all_dates
 
 #calculate_horizontal_levels_using_only_lows_binance('BTCUSDT',1,2,1000)
 

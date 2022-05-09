@@ -1,5 +1,6 @@
 import pprint
 from typing import List , Any
+import traceback
 from collections import Counter
 import ccxt
 import pandas as pd
@@ -8,6 +9,8 @@ import time
 import os
 import datetime as dt
 from pathlib import Path
+import datetime
+import numpy as np
 start_time=time.time()
 def get_list_of_all_exchanges():
     '''It get the list of all cryptocurrency exchanges'''
@@ -106,9 +109,13 @@ list_of_all_btc_pairs_from_all_exchanges_without_duplicates=[]
 list_of_all_usdt_pairs_from_all_exchanges_without_duplicates=[]
 dict_of_all_btc_pairs_from_all_exchanges_without_duplicates={}
 dict_of_all_usdt_pairs_from_all_exchanges_without_duplicates={}
+flattened_list_of_all_btc_pairs_from_all_exchanges=None
+flattened_list_of_all_usdt_pairs_from_all_exchanges=None
 def get_USDT_and_BTC_trading_pairs_from_all_exchanges():
     global list_of_all_btc_pairs_from_all_exchanges_without_duplicates
     global list_of_all_usdt_pairs_from_all_exchanges_without_duplicates
+    global flattened_list_of_all_btc_pairs_from_all_exchanges
+    global flattened_list_of_all_usdt_pairs_from_all_exchanges
     list_of_all_exchanges=get_list_of_all_exchanges ()
     list_of_all_btc_pairs_from_all_exchanges=[]
     list_of_all_usdt_pairs_from_all_exchanges=[]
@@ -125,10 +132,10 @@ def get_USDT_and_BTC_trading_pairs_from_all_exchanges():
             #print ( "btc_pairs_list=\n" , btc_pairs_list )
             list_of_all_btc_pairs_from_all_exchanges.append(btc_pairs_list)
             list_of_all_usdt_pairs_from_all_exchanges.append ( usdt_pairs_list )
-            print ( "len ( list_of_all_btc_pairs_from_all_exchanges )= ")
-            print(len(list_of_all_btc_pairs_from_all_exchanges))
-            print ( "len ( list_of_all_usdt_pairs_from_all_exchanges )= " )
-            print ( len ( list_of_all_usdt_pairs_from_all_exchanges ) )
+            # print ( "len ( list_of_all_btc_pairs_from_all_exchanges )= ")
+            # print(len(list_of_all_btc_pairs_from_all_exchanges))
+            # print ( "len ( list_of_all_usdt_pairs_from_all_exchanges )= " )
+            # print ( len ( list_of_all_usdt_pairs_from_all_exchanges ) )
             #time.sleep ( 3 )
             print("-"*80)
         except Exception as e:
@@ -142,6 +149,10 @@ def get_USDT_and_BTC_trading_pairs_from_all_exchanges():
           len(list_of_all_btc_pairs_from_all_exchanges))
     #time.sleep ( 30000 )
 
+    flattened_list_of_all_btc_pairs_from_all_exchanges=\
+        flatten ( list_of_all_btc_pairs_from_all_exchanges )
+    flattened_list_of_all_usdt_pairs_from_all_exchanges = \
+        flatten ( list_of_all_usdt_pairs_from_all_exchanges )
 
     list_of_all_btc_pairs_from_all_exchanges_without_duplicates=\
         list(dict.fromkeys(flatten(list_of_all_btc_pairs_from_all_exchanges)))
@@ -150,8 +161,8 @@ def get_USDT_and_BTC_trading_pairs_from_all_exchanges():
 
     print ( "+++++++list_of_all_btc_pairs_from_all_exchanges_without_duplicates++++++\n" ,
             list_of_all_btc_pairs_from_all_exchanges_without_duplicates ,
-            '\nnumber_of_all_btc_pairs_from_all_exchanges_without_duplicates=' ,
-            len ( list_of_all_btc_pairs_from_all_exchanges_without_duplicates ) )
+            '\nnumber_of_usdt_btc_pairs_from_all_exchanges_without_duplicates=' ,
+            len ( list_of_all_usdt_pairs_from_all_exchanges_without_duplicates ) )
 
     #time.sleep(5)
     #dict_with_counted_btc_pairs_without_duplicates=\
@@ -167,6 +178,8 @@ get_USDT_and_BTC_trading_pairs_from_all_exchanges()
 def insert_USDT_and_BTC_trading_pairs_from_all_exchanges_into_db(
         list_of_all_btc_pairs_from_all_exchanges_without_duplicates,
         list_of_all_usdt_pairs_from_all_exchanges_without_duplicates):
+
+
     path_to_db_with_USDT_and_btc_pairs = os.path.join ( os.getcwd () , "datasets" ,
                                 "sql_databases" ,
                                 "btc_and_usdt_pairs_from_all_exchanges.db" )
@@ -174,9 +187,11 @@ def insert_USDT_and_BTC_trading_pairs_from_all_exchanges_into_db(
     connection_to_btc_and_usdt_trading_pairs=\
         sqlite3.connect ( path_to_db_with_USDT_and_btc_pairs )
     df_of_all_btc_pairs_from_all_exchanges_without_duplicates=\
-        pd.DataFrame(list_of_all_btc_pairs_from_all_exchanges_without_duplicates)
+        pd.DataFrame(list_of_all_btc_pairs_from_all_exchanges_without_duplicates,
+                     columns = ["btc_trading_pairs"])
     df_of_all_usdt_pairs_from_all_exchanges_without_duplicates=\
-        pd.DataFrame (list_of_all_usdt_pairs_from_all_exchanges_without_duplicates )
+        pd.DataFrame (list_of_all_usdt_pairs_from_all_exchanges_without_duplicates,
+                     columns = ["usdt_trading_pairs"] )
 
     df_of_all_btc_pairs_from_all_exchanges_without_duplicates.to_sql ( "btc_pair" ,
                      connection_to_btc_and_usdt_trading_pairs ,
@@ -210,15 +225,28 @@ def create_empty_database(path_to_db):
     pass
 
 
-def get_BTC_pair_ohlcv_from_exchanges(list_of_all_btc_pairs_from_all_exchanges_without_duplicates,
-                                      dict_of_all_btc_pairs_from_all_exchanges_without_duplicates):
-    header = ['Timestamp' , 'Open' , 'High' , 'Low' , 'Close' , 'Volume']
+def get_BTC_and_USDT_pair_ohlcv_from_exchanges(list_of_all_btc_pairs_from_all_exchanges_without_duplicates,
+                                      dict_of_all_btc_pairs_from_all_exchanges_without_duplicates,
+                                      flattened_list_of_all_btc_pairs_from_all_exchanges,
+                                      flattened_list_of_all_usdt_pairs_from_all_exchanges):
+    #global flattened_list_of_all_btc_pairs_from_all_exchanges
+    # global flattened_list_of_all_usdt_pairs_from_all_exchanges
+    header = ['Timestamp' , 'open' , 'high' , 'low' , 'close' , 'volume']
     list_of_all_exchanges = get_list_of_all_exchanges ()
     list_of_all_btc_pairs_from_all_exchanges = []
+    list_of_all_usdt_pairs_from_all_exchanges = []
+    dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges = {}
+    this_many_last_days=7
     connection_to_btc_trading_pairs_ohlcv = sqlite3.connect ( os.path.join ( os.getcwd () ,
                                                             "datasets" ,
                                                             "sql_databases" ,
                                                             "all_exchanges_multiple_tables_historical_data_for_btc_trading_pairs.db" ))
+    connection_to_usdt_trading_pairs_ohlcv = sqlite3.connect ( os.path.join ( os.getcwd () ,
+                                                                             "datasets" ,
+                                                                             "sql_databases" ,
+                                                                             "all_exchanges_multiple_tables_historical_data_for_usdt_trading_pairs.db" ) )
+
+
     for exchange in list_of_all_exchanges:
 
         try:
@@ -226,46 +254,105 @@ def get_BTC_pair_ohlcv_from_exchanges(list_of_all_btc_pairs_from_all_exchanges_w
                 get_USDT_and_BTC_trading_pairs_from_one_exchange ( exchange )
             print ( "+" * 80 )
             print ( exchange )
+            print("len(list_of_all_exchanges)=",len(list_of_all_exchanges))
 
             #print ( "\nbtc_pairs_list=\n" , btc_pairs_list )
             exchange_object = getattr ( ccxt , exchange ) ()
             exchange_object.load_markets ()
-            for btc_pair in btc_pairs_list:
-
-                #print("\n*********list_of_all_btc_pairs_from_all_exchanges*********\n",
-                #      list_of_all_btc_pairs_from_all_exchanges)
-
-                if btc_pair not in list_of_all_btc_pairs_from_all_exchanges:
-                    list_of_all_btc_pairs_from_all_exchanges.append(btc_pair)
-                    #print ( "\n^^^^^^list_of_all_btc_pairs_from_all_exchanges^^^^^^^\n" ,
-                    #        list_of_all_btc_pairs_from_all_exchanges )
-
-                    print( f'{len ( list_of_all_btc_pairs_from_all_exchanges )} out of '
-                           f'{len ( list_of_all_btc_pairs_from_all_exchanges_without_duplicates )}'
-                           f' have been added' )
+            i = 0
+            for usdt_pair in usdt_pairs_list:
+                try:
+                    list_of_all_usdt_pairs_from_all_exchanges.append ( usdt_pair )
+                    print ( f'{len ( list_of_all_usdt_pairs_from_all_exchanges )} out of '
+                            f'{len ( flattened_list_of_all_usdt_pairs_from_all_exchanges )}'
+                            f' have been added' )
                     #      /len(list_of_all_btc_pairs_from_all_exchanges_without_duplicates))
-                    data = exchange_object.fetch_ohlcv ( btc_pair , '1d' )
+                    data = exchange_object.fetch_ohlcv ( usdt_pair , '1d' )
                     data_df = pd.DataFrame ( data , columns = header ).set_index ( 'Timestamp' )
-                    print("="*80)
-                    print ( f'ohlcv for {btc_pair} on exchange {exchange}\n' )
-                    print(data_df)
-                    data_df['trading_pair']=btc_pair
+                    print ( "=" * 80 )
+                    print ( f'ohlcv for {usdt_pair} on exchange {exchange}\n' )
+                    print ( data_df )
+                    data_df['trading_pair'] = usdt_pair
                     data_df['exchange'] = exchange
 
-                    list_of_dates = [dt.datetime.fromtimestamp(x/1000.0) for x in data_df.index]
-                    print("list_of_dates=\n",list_of_dates)
-                    #time.sleep(5)
-                    data_df.to_sql(f"{btc_pair}",
-                                   connection_to_btc_trading_pairs_ohlcv,
-                                   if_exists = 'replace')
-                else:
-                    print(f'{btc_pair} is already in the list.'
-                          f' {exchange} has the same btc_trading_pair in one of the previous exchanges')
+                    data_df['open_time'] = \
+                        [dt.datetime.fromtimestamp ( x / 1000.0 ) for x in data_df.index]
+                    data_df.set_index ( 'open_time' )
+                    # print ( "list_of_dates=\n" , list_of_dates )
+                    # time.sleep(5)
+                    data_df.to_sql ( f"{usdt_pair}_on_{exchange}" ,
+                                     connection_to_usdt_trading_pairs_ohlcv ,
+                                     if_exists = 'replace' )
+
+                    last_several_days_slice_df = data_df.tail ( this_many_last_days )
+                    # last_several_days_slice_df=\
+                    #     last_several_days_slice_df.drop_duplicates(subset = ["high",'low'])
+
+                    if last_several_days_slice_df.duplicated(subset = 'high', keep = False).sum()==len(last_several_days_slice_df):
+                        print(f"all duplicated highs are found in {usdt_pair} on {exchange}")
+                        continue
+
+                    print ( "last_several_days_slice_df=\n" , last_several_days_slice_df.to_string() )
+                    last_several_days_highs_slice_Series = \
+                        last_several_days_slice_df['high'].squeeze()
+                    last_several_days_lows_slice_Series = \
+                        last_several_days_slice_df['low'].squeeze()
+
+                    for row_number_in_highs, daily_high in last_several_days_highs_slice_Series.iteritems():
+                        for row_number_in_lows, daily_low in last_several_days_lows_slice_Series.iteritems():
+                            if daily_high == daily_low :
+
+                                print ( f'found mirror horizontal level '
+                                        f'in {usdt_pair} on {exchange}.')
+                                print ("last_several_days_highs_slice_Series\n",
+                                       last_several_days_highs_slice_Series)
+                                print ( "daily_high\n" ,
+                                        daily_high )
+                                print ( "row_number_in_highs\n" ,
+                                        row_number_in_highs )
+                                print ( "row_number_in_lows\n" ,
+                                        row_number_in_lows )
+                                print ( "last_several_days_highs_slice_Series.iat[row_number_in_highs]\n" ,
+                                        last_several_days_highs_slice_Series.iat[row_number_in_highs] )
+                                print ( "last_several_days_highs_slice_Series.size\n" ,
+                                        last_several_days_highs_slice_Series.size )
+
+
+                                print ( "last_several_days_lows_slice_Series\n" ,
+                                        last_several_days_lows_slice_Series )
+                                print ( "daily_low\n" ,
+                                        daily_low )
+
+
+
+
+
+
+
+                                if usdt_pair not in dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges:
+                                    dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges[usdt_pair] = \
+                                        {exchange}
+                                    print('dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges\n',
+                                          dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges)
+                                    print ( 'len(dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges)\n' ,
+                                            len(dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges) )
+                                else:
+
+                                    dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges[usdt_pair].add(exchange)
+                                    print ( 'dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges\n' ,
+                                            dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges )
+                                    print ( 'len(dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges)\n' ,
+                                            len ( dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges ) )
+
+                            else:
+                                continue
+                except:
                     continue
 
             print ( "-" * 80 )
         except Exception as e:
             print ( f'problem with exchange {exchange}\n',e )
+            traceback.print_exc ()
         finally:
             continue
     print("len(list_of_all_btc_pairs_from_all_exchanges)\n",
@@ -276,10 +363,14 @@ def get_BTC_pair_ohlcv_from_exchanges(list_of_all_btc_pairs_from_all_exchanges_w
                Counter(list_of_all_btc_pairs_from_all_exchanges)).elements()))
 
 
-get_BTC_pair_ohlcv_from_exchanges(
+get_BTC_and_USDT_pair_ohlcv_from_exchanges(
     list_of_all_btc_pairs_from_all_exchanges_without_duplicates,
-    dict_of_all_btc_pairs_from_all_exchanges_without_duplicates)
+    dict_of_all_btc_pairs_from_all_exchanges_without_duplicates,
+    flattened_list_of_all_btc_pairs_from_all_exchanges,
+    flattened_list_of_all_usdt_pairs_from_all_exchanges)
 
 end_time=time.time()
 overall_time=end_time-start_time
 print('overall time in minutes=', overall_time/60.0)
+print('overall time in hours=', overall_time/3600.0)
+print('overall time=', str(datetime.timedelta(seconds = overall_time)))
