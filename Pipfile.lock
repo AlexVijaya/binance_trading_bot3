@@ -1,5 +1,7 @@
 import pprint
 from typing import List , Any
+import talib
+from drop_table_from_database import drop_table_from_database
 import traceback
 from collections import Counter
 import ccxt
@@ -236,16 +238,28 @@ def get_BTC_and_USDT_pair_ohlcv_from_exchanges(list_of_all_btc_pairs_from_all_ex
     list_of_all_btc_pairs_from_all_exchanges = []
     list_of_all_usdt_pairs_from_all_exchanges = []
     dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges = {}
-    this_many_last_days=7
-    connection_to_btc_trading_pairs_ohlcv = sqlite3.connect ( os.path.join ( os.getcwd () ,
-                                                            "datasets" ,
-                                                            "sql_databases" ,
-                                                            "all_exchanges_multiple_tables_historical_data_for_btc_trading_pairs.db" ))
-    connection_to_usdt_trading_pairs_ohlcv = sqlite3.connect ( os.path.join ( os.getcwd () ,
-                                                                             "datasets" ,
-                                                                             "sql_databases" ,
-                                                                             "all_exchanges_multiple_tables_historical_data_for_usdt_trading_pairs.db" ) )
+    this_many_last_days=90
+    # connection_to_btc_trading_pairs_ohlcv = sqlite3.connect ( os.path.join ( os.getcwd () ,
+    #                                                         "datasets" ,
+    #                                                         "sql_databases" ,
+    #                                                         "all_exchanges_multiple_tables_historical_data_for_btc_trading_pairs.db" ))
+    connection_to_usdt_trading_pairs_ohlcv =\
+        sqlite3.connect ( os.path.join ( os.getcwd () ,
+                                         "datasets" ,
+                                         "sql_databases" ,
+                                         "all_exchanges_multiple_tables_historical_data_for_usdt_trading_pairs.db" ) )
+    path_to_db_with_USDT_and_btc_pairs = os.path.join ( os.getcwd () , "datasets" ,
+                                                        "sql_databases" ,
+                                                        "btc_and_usdt_pairs_from_all_exchanges.db" )
 
+    connection_to_btc_and_usdt_trading_pairs = \
+        sqlite3.connect ( path_to_db_with_USDT_and_btc_pairs )
+
+    mirror_level_df=pd.DataFrame(columns = ['USDT_pair', 'exchange', 'mirror_level',
+                                             'timestamp_for_low','timestamp_for_high',
+                                             'low','high','open_time_of_candle_with_legit_low',
+                                            'open_time_of_candle_with_legit_high'])
+    drop_table_from_database("mirror_levels",path_to_db_with_USDT_and_btc_pairs)
 
     for exchange in list_of_all_exchanges:
 
@@ -259,7 +273,7 @@ def get_BTC_and_USDT_pair_ohlcv_from_exchanges(list_of_all_btc_pairs_from_all_ex
             #print ( "\nbtc_pairs_list=\n" , btc_pairs_list )
             exchange_object = getattr ( ccxt , exchange ) ()
             exchange_object.load_markets ()
-            i = 0
+
             for usdt_pair in usdt_pairs_list:
                 try:
                     list_of_all_usdt_pairs_from_all_exchanges.append ( usdt_pair )
@@ -280,6 +294,11 @@ def get_BTC_and_USDT_pair_ohlcv_from_exchanges(list_of_all_btc_pairs_from_all_ex
                     data_df.set_index ( 'open_time' )
                     # print ( "list_of_dates=\n" , list_of_dates )
                     # time.sleep(5)
+                    data_df['psar'] = talib.SAR ( data_df.high ,
+                                                  data_df.low ,
+                                                  acceleration = 0.02 ,
+                                                  maximum = 0.2 )
+
                     data_df.to_sql ( f"{usdt_pair}_on_{exchange}" ,
                                      connection_to_usdt_trading_pairs_ohlcv ,
                                      if_exists = 'replace' )
@@ -288,7 +307,8 @@ def get_BTC_and_USDT_pair_ohlcv_from_exchanges(list_of_all_btc_pairs_from_all_ex
                     # last_several_days_slice_df=\
                     #     last_several_days_slice_df.drop_duplicates(subset = ["high",'low'])
 
-                    if last_several_days_slice_df.duplicated(subset = 'high', keep = False).sum()==len(last_several_days_slice_df):
+                    if last_several_days_slice_df.duplicated(subset = 'high',
+                                                             keep = False).sum()==len(last_several_days_slice_df):
                         print(f"all duplicated highs are found in {usdt_pair} on {exchange}")
                         continue
 
@@ -298,51 +318,111 @@ def get_BTC_and_USDT_pair_ohlcv_from_exchanges(list_of_all_btc_pairs_from_all_ex
                     last_several_days_lows_slice_Series = \
                         last_several_days_slice_df['low'].squeeze()
 
-                    for row_number_in_highs, daily_high in last_several_days_highs_slice_Series.iteritems():
-                        for row_number_in_lows, daily_low in last_several_days_lows_slice_Series.iteritems():
+                    for row_number_in_highs in range(last_several_days_highs_slice_Series.size):
+                        for row_number_in_lows in range(last_several_days_lows_slice_Series.size):
+                            daily_high=last_several_days_highs_slice_Series.iloc[row_number_in_highs-1]
+                            daily_low = last_several_days_lows_slice_Series.iloc[row_number_in_lows-1]
                             if daily_high == daily_low :
 
-                                print ( f'found mirror horizontal level '
-                                        f'in {usdt_pair} on {exchange}.')
-                                print ("last_several_days_highs_slice_Series\n",
-                                       last_several_days_highs_slice_Series)
-                                print ( "daily_high\n" ,
-                                        daily_high )
-                                print ( "row_number_in_highs\n" ,
-                                        row_number_in_highs )
-                                print ( "row_number_in_lows\n" ,
-                                        row_number_in_lows )
-                                print ( "last_several_days_highs_slice_Series.iat[row_number_in_highs]\n" ,
-                                        last_several_days_highs_slice_Series.iat[row_number_in_highs] )
-                                print ( "last_several_days_highs_slice_Series.size\n" ,
-                                        last_several_days_highs_slice_Series.size )
+                                # print ( f'found mirror horizontal level '
+                                #         f'in {usdt_pair} on {exchange}.')
+                                # print ("last_several_days_highs_slice_Series\n",
+                                #        last_several_days_highs_slice_Series)
+                                # print ( "last_several_days_lows_slice_Series\n" ,
+                                #         last_several_days_lows_slice_Series )
+                                # print ( "daily_high\n" ,
+                                #         daily_high )
+                                # print ( "row_number_in_highs\n" ,
+                                #         row_number_in_highs )
+                                # print ( "row_number_in_lows\n" ,
+                                #         row_number_in_lows )
+                                # print ( "last_several_days_highs_slice_Series.iat[row_number_in_highs]\n" ,
+                                #         last_several_days_highs_slice_Series.iat[row_number_in_highs-1] )
+                                # print ( "last_several_days_highs_slice_Series.size\n" ,
+                                #         last_several_days_highs_slice_Series.size )
 
 
-                                print ( "last_several_days_lows_slice_Series\n" ,
-                                        last_several_days_lows_slice_Series )
                                 print ( "daily_low\n" ,
                                         daily_low )
+                                print ( "daily_high\n" ,
+                                        daily_high )
+                                if row_number_in_lows > 1 and row_number_in_lows < last_several_days_lows_slice_Series.size:
+                                    print("found not boundary low")
+
+                                if row_number_in_highs>1 and row_number_in_highs<last_several_days_highs_slice_Series.size:
+                                    print("found not boundary high")
+                                    if row_number_in_lows>1 and row_number_in_lows<last_several_days_lows_slice_Series.size:
+                                        prev_daily_high=last_several_days_highs_slice_Series.iloc[row_number_in_highs-2]
+                                        next_daily_high = last_several_days_highs_slice_Series.iloc[row_number_in_highs]
+                                        prev_daily_low = last_several_days_lows_slice_Series.iloc[
+                                            row_number_in_lows - 2]
+                                        next_daily_low = last_several_days_lows_slice_Series.iloc[row_number_in_lows]
+
+                                        print ( "prev_daily_high\n" ,prev_daily_high )
+                                        print ( "next_daily_high\n" , next_daily_high )
+                                        print ( "prev_daily_low\n" , prev_daily_low )
+                                        print ( "next_daily_low\n" , next_daily_low )
+                                        if prev_daily_low > daily_low and next_daily_low > daily_low:
+                                            print ( "found legit low" )
+
+
+                                        if prev_daily_high<daily_high and next_daily_high<daily_high:
+                                            print ( "found legit high" )
+                                            if prev_daily_low>daily_low and next_daily_low>daily_low:
+                                                print ("level is legit\n")
+
+                                                list_of_tuples_of_lows=list(last_several_days_lows_slice_Series.items())
+                                                tuple_of_legit_low_level=list_of_tuples_of_lows[row_number_in_lows - 1]
+
+                                                list_of_tuples_of_highs = list (
+                                                    last_several_days_highs_slice_Series.items () )
+                                                tuple_of_legit_high_level = list_of_tuples_of_highs[
+                                                    row_number_in_highs - 1]
+
+                                                print ( "dt.datetime.fromtimestamp ( tuple_of_legit_low_level[0] )\n" ,
+                                                        dt.datetime.fromtimestamp ( tuple_of_legit_low_level[0]/ 1000.0 ) )
+
+                                                print ( "dt.datetime.fromtimestamp ( tuple_of_legit_high_level[0] )" ,
+                                                        dt.datetime.fromtimestamp ( tuple_of_legit_high_level[0]/ 1000.0 ) )
 
 
 
 
+                                                mirror_level_df.loc[0,'USDT_pair']=usdt_pair
+                                                mirror_level_df.loc[0,'exchange'] = exchange
+                                                mirror_level_df.loc[0,'mirror_level'] = daily_low
+                                                mirror_level_df.loc[0,'timestamp_for_low'] =\
+                                                    tuple_of_legit_low_level[0]
+                                                mirror_level_df.loc[0,'timestamp_for_high'] =\
+                                                    tuple_of_legit_high_level[0]
+                                                mirror_level_df.loc[0,'low'] = daily_low
+                                                mirror_level_df.loc[0,'high'] = daily_high
+                                                mirror_level_df.loc[0,'open_time_of_candle_with_legit_low'] = \
+                                                    dt.datetime.fromtimestamp ( tuple_of_legit_low_level[0]/ 1000.0  )
+                                                mirror_level_df.loc[0 , 'open_time_of_candle_with_legit_high'] = \
+                                                    dt.datetime.fromtimestamp ( tuple_of_legit_high_level[0]/ 1000.0  )
+
+                                                print('mirror_level_df\n',mirror_level_df)
+
+                                                mirror_level_df.to_sql ( "mirror_levels" ,
+                                                                         connection_to_btc_and_usdt_trading_pairs ,
+                                                                         if_exists = 'append' ,index=False)
 
 
+                                                if usdt_pair not in dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges:
+                                                    dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges[usdt_pair] = \
+                                                        {exchange}
+                                                    print('dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges\n',
+                                                          dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges)
+                                                    print ( 'len(dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges)\n' ,
+                                                            len(dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges) )
+                                                else:
 
-                                if usdt_pair not in dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges:
-                                    dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges[usdt_pair] = \
-                                        {exchange}
-                                    print('dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges\n',
-                                          dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges)
-                                    print ( 'len(dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges)\n' ,
-                                            len(dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges) )
-                                else:
-
-                                    dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges[usdt_pair].add(exchange)
-                                    print ( 'dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges\n' ,
-                                            dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges )
-                                    print ( 'len(dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges)\n' ,
-                                            len ( dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges ) )
+                                                    dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges[usdt_pair].add(exchange)
+                                                    print ( 'dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges\n' ,
+                                                            dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges )
+                                                    print ( 'len(dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges)\n' ,
+                                                            len ( dict_of_all_usdt_pairs_with_mirror_levels_from_all_exchanges ) )
 
                             else:
                                 continue
@@ -358,10 +438,13 @@ def get_BTC_and_USDT_pair_ohlcv_from_exchanges(list_of_all_btc_pairs_from_all_ex
     print("len(list_of_all_btc_pairs_from_all_exchanges)\n",
           len(list_of_all_btc_pairs_from_all_exchanges))
 
+
+
     print('difference between two lists=\n',
           list((Counter(list_of_all_btc_pairs_from_all_exchanges_without_duplicates)-
                Counter(list_of_all_btc_pairs_from_all_exchanges)).elements()))
-
+    connection_to_usdt_trading_pairs_ohlcv.close()
+    connection_to_btc_and_usdt_trading_pairs.close ()
 
 get_BTC_and_USDT_pair_ohlcv_from_exchanges(
     list_of_all_btc_pairs_from_all_exchanges_without_duplicates,

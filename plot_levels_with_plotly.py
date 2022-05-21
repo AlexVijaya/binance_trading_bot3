@@ -102,7 +102,7 @@ def plot_levels_with_plotly():
 
                 print ( "symbols.index(symbol)+1" , symbols.index ( symbol ) + 1 )
                 print("i=",i)
-                #time.sleep(2)
+
 
 
                 fig.add_trace ( go.Candlestick (
